@@ -1,0 +1,77 @@
+name: wagering
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_USER: wagering
+      POSTGRES_PASSWORD: wagering
+      POSTGRES_DB: wagering
+    ports:
+      - "55432:5432"
+    volumes:
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wagering -d wagering"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  localstack:
+    image: localstack/localstack:3.8.1
+    environment:
+      SERVICES: sqs
+      AWS_DEFAULT_REGION: us-east-1
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./docker/localstack/init-sqs.sh:/etc/localstack/init/ready.d/init-sqs.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal sqs get-queue-url --queue-name wager-transactions.fifo"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
+  migrate:
+    build: .
+    command: ["bun", "src/infrastructure/database/migrate.ts", "up"]
+    environment: &app-env
+      DATABASE_URL: postgres://wagering:wagering@postgres:5432/wagering
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      SQS_ENDPOINT: http://localstack:4566
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: ["app"]
+
+  # Two identical instances to exercise multi-instance correctness.
+  app-1:
+    build: .
+    environment:
+      <<: *app-env
+      INSTANCE_ID: app-1
+    ports:
+      - "3001:3000"
+    depends_on: &app-deps
+      migrate:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+    profiles: ["app"]
+
+  app-2:
+    build: .
+    environment:
+      <<: *app-env
+      INSTANCE_ID: app-2
+    ports:
+      - "3002:3000"
+    depends_on: *app-deps
+    profiles: ["app"]
+
+volumes:
+  pgdata:

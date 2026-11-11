@@ -1,0 +1,18 @@
+/**
+ * Stable, machine readable rejection codes. They are part of the public
+ * contract (HTTP responses and events), so never rename an existing value.
+ */
+export const FailureCode = {
+  WALLET_NOT_FOUND: 'WALLET_NOT_FOUND',
+  INSUFFICIENT_FUNDS: 'INSUFFICIENT_FUNDS',
+  INSUFFICIENT_FUNDS_FOR_REVERSAL: 'INSUFFICIENT_FUNDS_FOR_REVERSAL',
+  REFERENCE_NOT_FOUND: 'REFERENCE_NOT_FOUND',
+  REFERENCE_NOT_PROCESSED: 'REFERENCE_NOT_PROCESSED',
+  INVALID_REFERENCE_TYPE: 'INVALID_REFERENCE_TYPE',
+  REFERENCE_MISMATCH: 'REFERENCE_MISMATCH',
+  CURRENCY_MISMATCH: 'CURRENCY_MISMATCH',
+  AMOUNT_MISMATCH: 'AMOUNT_MISMATCH',
+  ALREADY_REVERSED: 'ALREADY_REVERSED',
+} as const;
+
+export type FailureCode = (typeof FailureCode)[keyof typeof FailureCode];
