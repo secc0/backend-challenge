@@ -12,6 +12,10 @@ function int(name: string, fallback: number): number {
 }
 
 /** Background workers this instance runs. The HTTP API (with health and metrics) always runs. */
+function sqsEndpoint(value: string): string | undefined {
+  return value === 'aws' ? undefined : value;
+}
+
 export type WorkerRole = 'consumer' | 'outbox' | 'pending-reference';
 const ALL_WORKERS: WorkerRole[] = ['consumer', 'outbox', 'pending-reference'];
 
@@ -77,7 +81,8 @@ export function loadConfig(): AppConfig {
     },
     sqs: {
       region: str('AWS_REGION', 'us-east-1'),
-      endpoint: process.env.SQS_ENDPOINT || undefined,
+      // Local development defaults to LocalStack; set SQS_ENDPOINT=aws to use the real AWS endpoint.
+      endpoint: sqsEndpoint(str('SQS_ENDPOINT', 'http://localhost:4566')),
       wagerQueueName: str('WAGER_QUEUE_NAME', 'wager-transactions.fifo'),
       wagerDlqName: str('WAGER_DLQ_NAME', 'wager-transactions-dlq.fifo'),
       eventsQueueName: str('EVENTS_QUEUE_NAME', 'wager-events'),
