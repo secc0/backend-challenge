@@ -3,7 +3,7 @@ import type { LedgerEntry } from './ledger-entry';
 import type { WagerTransaction } from './wager-transaction';
 import type { Wallet } from './wallet';
 
-export interface EventEnvelope<TPayload = Record<string, unknown>> {
+export interface EventEnvelope<TPayload = object> {
   eventId: string;
   eventType: string;
   eventVersion: number;
@@ -19,7 +19,7 @@ export interface EventEnvelope<TPayload = Record<string, unknown>> {
  * payload; the envelope (ids, timestamps, versioning) is uniform. Money is
  * always serialized as decimal strings.
  */
-export abstract class DomainEvent<TPayload extends object = Record<string, unknown>> {
+export abstract class DomainEvent<TPayload extends object = object> {
   readonly eventId: string = randomUUID();
   abstract readonly eventType: string;
   readonly eventVersion: number = 1;

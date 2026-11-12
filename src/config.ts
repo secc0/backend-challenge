@@ -11,13 +11,14 @@ function int(name: string, fallback: number): number {
   return value;
 }
 
-export type AppRole = 'api' | 'consumer' | 'outbox' | 'pending-reference';
-const ALL_ROLES: AppRole[] = ['api', 'consumer', 'outbox', 'pending-reference'];
+/** Background workers this instance runs. The HTTP API (with health and metrics) always runs. */
+export type WorkerRole = 'consumer' | 'outbox' | 'pending-reference';
+const ALL_WORKERS: WorkerRole[] = ['consumer', 'outbox', 'pending-reference'];
 
 export interface AppConfig {
   instanceId: string;
   port: number;
-  roles: Set<AppRole>;
+  workers: Set<WorkerRole>;
   logLevel: string;
   database: {
     url: string;
@@ -55,18 +56,18 @@ export interface AppConfig {
 }
 
 export function loadConfig(): AppConfig {
-  const roles = str('APP_ROLES', ALL_ROLES.join(','))
+  const workers = str('APP_WORKERS', ALL_WORKERS.join(','))
     .split(',')
-    .map((role) => role.trim())
-    .filter(Boolean);
-  for (const role of roles) {
-    if (!ALL_ROLES.includes(role as AppRole)) throw new Error(`Unknown role in APP_ROLES: ${role}`);
+    .map((worker) => worker.trim())
+    .filter((worker) => worker && worker !== 'none');
+  for (const worker of workers) {
+    if (!ALL_WORKERS.includes(worker as WorkerRole)) throw new Error(`Unknown worker in APP_WORKERS: ${worker}`);
   }
 
   return {
     instanceId: str('INSTANCE_ID', `${process.pid}`),
     port: int('PORT', 3000),
-    roles: new Set(roles as AppRole[]),
+    workers: new Set(workers as WorkerRole[]),
     logLevel: str('LOG_LEVEL', 'info'),
     database: {
       url: str('DATABASE_URL', 'postgres://wagering:wagering@localhost:55432/wagering'),
