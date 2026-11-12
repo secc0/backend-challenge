@@ -38,6 +38,7 @@ export class Database {
       debug: false,
       migrations: {
         tableName: 'mikro_orm_migrations',
+        silent: process.env.LOG_LEVEL === 'error',
         transactional: true,
         allOrNothing: true,
         migrationsList: [
